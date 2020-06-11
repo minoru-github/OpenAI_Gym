@@ -18,12 +18,14 @@ num_action          = env.action_space.n # 取りうる行動の数
 min_list            = env.observation_space.low
 max_list            = env.observation_space.high
 
-# Q table setting
-q_table = np.random.uniform(
-    low = -1,
-    high = 1,
-    size = (num_digitized**num_observation, num_action)
-)
+def init_q_table():
+    # Q table setting
+    q_table = np.random.uniform(
+        low = -1,
+        high = 1,
+        size = (num_digitized**num_observation, num_action)
+    )
+    return q_table
 
 # 観測した状態を離散値にデジタル変換する
 def bins(clip_min,clip_max,num):
@@ -39,8 +41,8 @@ def get_digitized_state(observation):
 
 def update_q_table(q_table, state, action, reward, next_state):
     # param
-    alpha = 0.5     # learning rate ?
-    gamma = 0.99    # time rate ?
+    alpha = 0.5     # learning rate
+    gamma = 0.99    # discount factor
     # temporary
     max_of_next_q = max(q_table[next_state])
     now_q = q_table[state, action]
@@ -56,42 +58,47 @@ def get_action(q_table, next_state, episode):
         action = np.argmax(q_table[next_state])
     else:
         action = np.random.choice([x for x in range(num_action)])
-    return action  
+    return action
 
-for episode in range(num_of_episodes):
-    # initialize
-    observation = env.reset()
-    #[print('x:',x,'y:',y,'z:',z) for x,y,z in zip(observation, min_list, max_list)] 
-    state = get_digitized_state(observation)
-    action = np.argmax(q_table[state])
-    for t in range(num_of_steps):
-        # action(t) -> {state(t+1), reward(t)} 
-        next_observation, _ , done, _ = env.step(action)
-        # get reward
-        reward = 1 # temp
-        # 報酬を設定し与える
-        if done:
-            if t < (num_of_steps-5):
-                reward = -200   # こけたら罰則
-            else:
-                reward = 1      # 立ったまま終了時は罰則はなし
+def get_reward(done, time):
+    # rewardはテンプレ化できない、はず
+    # 以下はCartPole-v0での例
+    if done:
+        if time < (num_of_steps-5):
+            reward = -200   # 規定時間内にdone=true→こけた→罰則
         else:
-            reward = 1          # 各ステップで立ってたら報酬追加
-        # get digitized state(t+1)
-        next_state = get_digitized_state(next_observation)
-        # updata q_table
-        q_table = update_q_table(q_table, state, action, reward, next_state)
-        # get action(t+1)
-        next_action = get_action(q_table, next_state, episode)
-        # update state
-        state = next_state
-        # update action
-        action = next_action
+            reward = 1      # 規定時間は立ったまま→罰則なし
+    else:
+        reward = 1          # 立ってる間は報酬追加
+    return reward
 
-        # display
-        env.render()
-        # Log Out
-        #print("observation=", observation)
-        #print("reward", reward)
-        #print(info)
-        print("===================")
+def run_q_learning():
+    # init q_table
+    q_table = init_q_table()
+    # start Q-Learning
+    for episode in range(num_of_episodes):
+        # initialize
+        observation = env.reset()
+        #[print('x:',x,'y:',y,'z:',z) for x,y,z in zip(observation, min_list, max_list)] 
+        state = get_digitized_state(observation)
+        action = np.argmax(q_table[state])
+        for time in range(num_of_steps):
+            # action(t) -> {state(t+1), reward(t)} 
+            next_observation, _ , done, _ = env.step(action)
+            # get reward
+            reward = get_reward(done, time)
+            # get digitized state(t+1)
+            next_state = get_digitized_state(next_observation)
+            # updata q_table
+            q_table = update_q_table(q_table, state, action, reward, next_state)
+            # get action(t+1)
+            next_action = get_action(q_table, next_state, episode)
+            # update state
+            state = next_state
+            # update action
+            action = next_action
+            # display
+            env.render()
+
+if __name__ == "__main__":
+    run_q_learning()  
