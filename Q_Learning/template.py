@@ -5,7 +5,7 @@ from functools import reduce
 # env
 env=gym.make("CartPole-v0")
 #env=gym.make("MountainCar-v0")
-#env=gym.make("Taxi-v1")
+#env=gym.make("Pendulum-v0")
 
 # parameter setting(user指定)
 num_of_steps        = 200   # 1試行のstep数
@@ -14,7 +14,10 @@ num_digitized       = 6     # 離散化する分割数
 
 # parameter setting(env依存)
 num_observation     = reduce(lambda x,y: x * y, env.observation_space.shape) # tuple形式のshapeから観測する変数の数を求める 例１；(2,4) -> 8、　例２；(4,)  -> 4
-num_action          = env.action_space.n # 取りうる行動の数
+try:
+    num_action          = env.action_space.n # 取りうる行動の数
+except AttributeError:
+    num_action          = reduce(lambda x,y: x * y, env.action_space.shape)
 min_list            = env.observation_space.low
 max_list            = env.observation_space.high
 
@@ -84,7 +87,10 @@ def run_q_learning():
         action = np.argmax(q_table[state])
         for time in range(num_of_steps):
             # action(t) -> {state(t+1), reward(t)} 
-            next_observation, _ , done, _ = env.step(action)
+            try:
+                next_observation, _ , done, _ = env.step(action)
+            except IndexError:
+                next_observation, _ , done, _ = env.step([action])
             # get reward
             reward = get_reward(done, time)
             # get digitized state(t+1)
@@ -97,6 +103,8 @@ def run_q_learning():
             state = next_state
             # update action
             action = next_action
+            # logout
+            print('Ep:',episode,', Tm:',time)
             # display
             env.render()
 
