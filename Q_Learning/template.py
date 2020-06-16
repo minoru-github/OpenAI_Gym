@@ -2,17 +2,17 @@ import gym
 import numpy as np
 from functools import reduce
 
-# env
+# choose env
 env=gym.make("CartPole-v0")
 #env=gym.make("MountainCar-v0")
 #env=gym.make("Pendulum-v0")
 
-# parameter setting(user指定)
+# parameter setting(user defined)
 num_of_steps        = 200   # 1試行のstep数
 num_of_episodes     = 2000  # 総試行回数
 num_digitized       = 6     # 離散化する分割数
 
-# parameter setting(env依存)
+# parameter setting(depend on env)
 num_observation     = reduce(lambda x,y: x * y, env.observation_space.shape) # tuple形式のshapeから観測する変数の数を求める 例１；(2,4) -> 8、　例２；(4,)  -> 4
 try:
     num_action          = env.action_space.n # 取りうる行動の数
@@ -30,7 +30,7 @@ def init_q_table():
     )
     return q_table
 
-# 観測した状態を離散値にデジタル変換する
+# 最小値と最大値の範囲内で等間隔の数字列を生成(左端と右端を除く)
 def bins(clip_min,clip_max,num):
     return np.linspace(clip_min, clip_max, num + 1)[1:-1]
 
@@ -43,13 +43,13 @@ def get_digitized_state(observation):
     return sum([x * (num_digitized**i) for i, x in enumerate(digitized)])
 
 def update_q_table(q_table, state, action, reward, next_state):
-    # param
+    # parameter
     alpha = 0.5     # learning rate
     gamma = 0.99    # discount factor
-    # temporary
+    # temporary variablee
     max_of_next_q = max(q_table[next_state])
     now_q = q_table[state, action]
-    # update
+    # update Q-table
     q_table[state, action] = (1 - alpha) * now_q + alpha * (reward + gamma * max_of_next_q)
     return q_table
 
@@ -80,32 +80,35 @@ def run_q_learning():
     q_table = init_q_table()
     # start Q-Learning
     for episode in range(num_of_episodes):
-        # initialize
+        # reset env
         observation = env.reset()
-        #[print('x:',x,'y:',y,'z:',z) for x,y,z in zip(observation, min_list, max_list)] 
+        total_reward = 0
+        # get digitized state(t)
         state = get_digitized_state(observation)
-        action = np.argmax(q_table[state])
         for time in range(num_of_steps):
-            # action(t) -> {state(t+1), reward(t)} 
+            # 1: get action(t)
+            action = get_action(q_table, state, episode)
+            # 2-1: action(t) -> {state(t+1)} 
             try:
                 next_observation, _ , done, _ = env.step(action)
             except IndexError:
                 next_observation, _ , done, _ = env.step([action])
-            # get reward
-            reward = get_reward(done, time)
-            # get digitized state(t+1)
+            # 2-2: get digitized state(t+1)
             next_state = get_digitized_state(next_observation)
-            # updata q_table
+            # 3: get reward(t)
+            reward = get_reward(done, time)
+            total_reward += reward
+            # 4: updata q_table
             q_table = update_q_table(q_table, state, action, reward, next_state)
-            # get action(t+1)
-            next_action = get_action(q_table, next_state, episode)
-            # update state
+            # 5: save state
             state = next_state
-            # update action
-            action = next_action
-            # logout
-            print('Ep:',episode,', Tm:',time)
-            # display
+            # ex: judge go to next episode
+            if done:
+                # go to next episode
+                break
+            # ex: logout
+            print('Ep:',episode,', Tm:',time, 'Rwd:',total_reward)
+            # ex: display
             env.render()
 
 if __name__ == "__main__":
