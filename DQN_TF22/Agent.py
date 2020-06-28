@@ -19,11 +19,9 @@ class Agent():
         outputs = layers.Dense(units=self.num_actions, activation='linear')(x)
         model = keras.Model(inputs=inputs,outputs=outputs,name="dqn")
         model.summary()
-        # memo:↓は適当。
         model.compile(
-            loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            optimizer=keras.optimizers.RMSprop(),
-            metrics=["accuracy"],
+            loss=keras.losses.Huber(),
+            optimizer=keras.optimizers.RMSprop(learning_rate=0.00025)
         )
         return model
     #def train_network():
