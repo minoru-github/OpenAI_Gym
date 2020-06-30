@@ -1,42 +1,46 @@
 import gym
 import tensorflow as tf
 from functools import reduce
+from Agent import Agent
 
 # choose env
 env=gym.make("CartPole-v0")
 
 # parameter setting(user defined)
-num_of_steps        = 200   # 1試行のstep数
-num_of_episodes     = 2000  # 総試行回数
+NUM_STEPS    = 200   # 1試行のstep数
+NUM_EPISODES = 2000  # 総試行回数
+UPDATE_TARGET_FREQUENCY = 10 # Target Q networkの更新周期
 
 # parameter setting(depend on env)
-num_observation     = reduce(lambda x,y: x * y, env.observation_space.shape) # tuple形式のshapeから観測する変数の数を求める 例１；(2,4) -> 8、　例２；(4,)  -> 4
-num_action          = env.action_space.n # 取りうる行動の数
+num_states  = reduce(lambda x,y: x * y, env.observation_space.shape) # tuple形式のshapeから観測する変数の数を求める 例１；(2,4) -> 8、　例２；(4,)  -> 4
+num_actions = env.action_space.n # 取りうる行動の数
 
 def run_dqn():
     # start Q-Learning
-    for episode in range(num_of_episodes):
+    agent = Agent(num_states=num_states, num_actions=num_actions)
+    for episode in range(NUM_EPISODES):
         # reset env
         state = env.reset()
-        for time in range(num_of_steps):
+        for time in range(NUM_STEPS):
             # 1: get action(t)
-            action = get_action(state, main_qn)
+            action = agent.get_action(state, episode)
             # 2: action(t) -> {state(t+1)} 
-            next_state, _ , done, _ = env.step(action)
+            next_state, r , done, _ = env.step(action)
             # 3: get reward(t)
-            reward = get_reward()
-            # 4: save state
-            next_state = state
-            # 5: generate supervised data
-            y = generate_supervised_data(target_qn)
-            # 6: Learn Q-network
-            main_qn = update_main_qn(y)
-            # 7: update Q-network
-            target_qn = main_qn
+            reward = r # 報酬設計はとりあえずOpenAIのやつを使う
+            # 4: Memory stored as (s(t), a(t), r(t), s(t+1))
+            experience = ( state, action, reward, next_state)
+            agent.memory.add(experience)
+            # 5: update target Q-network
+            if time % UPDATE_TARGET_FREQUENCY == 0:
+                agent.update_target_network()
+            # 6: replay experiences and update network weight
+            agent.replay()
+            # 7: save state
+            state = next_state
             # ex: judge go to next episode
             if done:
-                # go to next episode
-                break
+                break # go to next episode
             # ex: logout
             print('Ep:',episode,', Tm:',time)
             # ex: display
