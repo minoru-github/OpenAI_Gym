@@ -6,6 +6,8 @@ from Memory import Memory
 
 # parameter setting
 MAX_MEMORY = 1000
+BATCH_SIZE = 32
+GAMMA = 0.99        # discount factor
 
 class Agent():
     # Constructor
@@ -41,7 +43,37 @@ class Agent():
     def update_target_network(self):
         self.trgt_q_net.set_weights(self.main_q_net.get_weights())
     def replay(self):
-        return 1
+        # MemoryからBATCH_SIZE分のサンプルを取り出す(サンプル数がBATCH_SIZE以下の場合はサンプル数分)
+        batch = self.memory.sample(BATCH_SIZE)
+        batch_len = len(batch)
+        # state(t)とstate(t+1)のnumpy配列取得
+        states      = np.array([experience[0] for experience in batch])
+        next_states = np.array([experience[3] for experience in batch])
+        # 推論(自身から作られたTarget networkで教師データ(の要素)を作る。ここが面白い！！)
+        main_q_predict = self.main_q_net.predict(states)
+        trgt_q_predict = self.trgt_q_net.predict(next_states)
+        # 学習データを初期化 (x, y) = (states, next reward)
+        x = np.zeros((batch_len, self.num_states))  # x[batch_cnt][num_states]
+        y = np.zeros((batch_len, self.num_actions)) # y[batch_cnt][num_actions]
+        # BATCH_SIZE分、学習データを作る
+        for batch_cnt, experience in enumerate(batch): # (s(t), a(t), r(t), s(t+1))
+            state      = experience[0]
+            action     = experience[1]
+            reward     = experience[2]
+            next_state = experience[3]
+            # Qテーブル相当を更新
+            q_table = main_q_predict[batch_cnt] # まずは今のQテーブル相当で初期化
+            if next_state is None:
+                q_table[action] = reward
+            else:
+                q_table[action] = reward + GAMMA * np.argmax(trgt_q_predict[batch_cnt])
+            x[batch_cnt] = state
+            y[batch_cnt] = q_table
+        # 学習(Q関数を近似するために、ターゲットネットワークの出力を教師データにする)
+        self._train(x, y)
+    # 学習実行
+    def _train(self,x,y):
+        self.main_q_net.fit(x=x, y=y, batch_size=BATCH_SIZE, epochs=1,verbose=0)
     def print_model(self, dqn_model):
         dqn_model.summary()
 
