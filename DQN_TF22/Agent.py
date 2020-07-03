@@ -17,15 +17,6 @@ class Agent():
         self.main_q_net = self._build_network("main")
         self.trgt_q_net = self._build_network('target')
         self.memory = Memory(MAX_MEMORY)
-    # 行動選択(ε-greedy法を使用してランダム行動も取らせる)
-    def get_action(self, state, episode):
-        epsilon = 0.5 / (episode + 1.0)
-        random_val = np.random.uniform(0,1)
-        if random_val >= epsilon:
-            action = np.argmax(self.main_q_net.predict(state)[0]) # best action
-        else:
-            action = np.random.choice([x for x in range(self.num_actions)]) # random action
-        return action
     # ネットワーク定義
     def _build_network(self, name):
         inputs = keras.Input(shape = (self.num_states,))
@@ -48,7 +39,7 @@ class Agent():
         batch_len = len(batch)
         # state(t)とstate(t+1)のnumpy配列取得
         states      = np.array([experience[0] for experience in batch])
-        next_states = np.array([experience[3] for experience in batch])
+        next_states = np.array([(np.zeros(self.num_states) if experience[3] is None else experience[3]) for experience in batch])
         # 推論(自身から作られたTarget networkで教師データ(の要素)を作る。ここが面白い！！)
         main_q_predict = self.main_q_net.predict(states)
         trgt_q_predict = self.trgt_q_net.predict(next_states)
@@ -76,4 +67,12 @@ class Agent():
         self.main_q_net.fit(x=x, y=y, batch_size=BATCH_SIZE, epochs=1,verbose=0)
     def print_model(self, dqn_model):
         dqn_model.summary()
-
+        # 行動選択(ε-greedy法を使用してランダム行動も取らせる)
+    def get_action(self, state, episode):
+        epsilon = 0.5 / (episode + 1.0)
+        random_val = np.random.uniform(0,1)
+        if random_val >= epsilon:
+            action = np.argmax(self.main_q_net.predict(state.reshape(1,self.num_states))[0]) # best action
+        else:
+            action = np.random.choice([x for x in range(self.num_actions)]) # random action
+        return action

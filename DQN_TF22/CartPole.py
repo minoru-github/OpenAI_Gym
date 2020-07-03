@@ -21,13 +21,17 @@ def run_dqn():
     for episode in range(NUM_EPISODES):
         # reset env
         state = env.reset()
+        total_reward = 0
         for time in range(NUM_STEPS):
             # 1: get action(t)
             action = agent.get_action(state, episode)
             # 2: action(t) -> {state(t+1)} 
             next_state, r , done, _ = env.step(action)
+            if done:
+                next_state = None
             # 3: get reward(t)
             reward = r # 報酬設計はとりあえずOpenAIのやつを使う
+            total_reward += reward
             # 4: Memory stored as (s(t), a(t), r(t), s(t+1))
             experience = ( state, action, reward, next_state)
             agent.memory.add(experience)
@@ -38,11 +42,11 @@ def run_dqn():
             agent.replay()
             # 7: save state
             state = next_state
+            # ex: logout
+            print('Ep:',episode,', Tm:',time, 'Rwd:',total_reward)
             # ex: judge go to next episode
             if done:
                 break # go to next episode
-            # ex: logout
-            print('Ep:',episode,', Tm:',time)
             # ex: display
             env.render()
 
