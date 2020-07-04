@@ -5,9 +5,10 @@ from tensorflow.keras import layers
 from Memory import Memory
 
 # parameter setting
-MAX_MEMORY = 1000
-BATCH_SIZE = 32
+MAX_MEMORY = 100000
+BATCH_SIZE = 64
 GAMMA = 0.99        # discount factor
+UPDATE_TARGET_FREQUENCY = 1000 # Target Q networkの更新周期
 
 class Agent():
     # Constructor
@@ -17,11 +18,12 @@ class Agent():
         self.main_q_net = self._build_network("main")
         self.trgt_q_net = self._build_network('target')
         self.memory = Memory(MAX_MEMORY)
+        self.run_counter = 0
     # ネットワーク定義
     def _build_network(self, name):
         inputs = keras.Input(shape = (self.num_states,))
-        x = layers.Dense(units=10, activation='relu')(inputs)
-        x = layers.Dense(units=10, activation='relu')(x)
+        x = layers.Dense(units=20, activation='relu')(inputs)
+        x = layers.Dense(units=20, activation='relu')(x)
         # memo:↓のactivationがlinearなのは、その行動をとった時のQ値を表現させるためにマイナスの値も取らせるため、だと思う。
         outputs = layers.Dense(units=self.num_actions, activation='linear')(x)
         model = keras.Model(inputs=inputs,outputs=outputs,name=name)
@@ -32,7 +34,9 @@ class Agent():
         return model
     # Target networkの重みをMain Networkの重みを用いて更新
     def update_target_network(self):
-        self.trgt_q_net.set_weights(self.main_q_net.get_weights())
+        self.run_counter += 1
+        if self.run_counter % UPDATE_TARGET_FREQUENCY == 0:
+            self.trgt_q_net.set_weights(self.main_q_net.get_weights())
     def replay(self):
         # MemoryからBATCH_SIZE分のサンプルを取り出す(サンプル数がBATCH_SIZE以下の場合はサンプル数分)
         batch = self.memory.sample(BATCH_SIZE)
@@ -68,11 +72,15 @@ class Agent():
     def print_model(self, dqn_model):
         dqn_model.summary()
         # 行動選択(ε-greedy法を使用してランダム行動も取らせる)
-    def get_action(self, state, episode):
-        epsilon = 0.5 / (episode + 1.0)
+    def act(self, state, episode):
+        epsilon = 0.05 + 0.9 / (episode + 1.0)
         random_val = np.random.uniform(0,1)
         if random_val >= epsilon:
             action = np.argmax(self.main_q_net.predict(state.reshape(1,self.num_states))[0]) # best action
+            print("best:",action)
         else:
-            action = np.random.choice([x for x in range(self.num_actions)]) # random action
+            action = self.act_randomly()
+            print("        rndm:",action)
         return action
+    def act_randomly(self):
+        return np.random.choice([x for x in range(self.num_actions)]) # random action
