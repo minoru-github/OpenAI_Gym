@@ -61,7 +61,7 @@ class Agent():
             if next_state is None:
                 q_table[action] = reward
             else:
-                q_table[action] = reward + GAMMA * np.argmax(trgt_q_predict[batch_cnt])
+                q_table[action] = reward + GAMMA * np.amax(trgt_q_predict[batch_cnt])
             x[batch_cnt] = state
             y[batch_cnt] = q_table
         # 学習(Q関数を近似するために、ターゲットネットワークの出力を教師データにする)
@@ -76,7 +76,7 @@ class Agent():
         epsilon = 0.05 + 0.9 / (episode + 1.0)
         random_val = np.random.uniform(0,1)
         if random_val >= epsilon:
-            action = np.argmax(self.main_q_net.predict(state.reshape(1,self.num_states))[0]) # best action
+            action = np.argmax(self.trgt_q_net.predict(state.reshape(1,self.num_states))) # best action
             print("best:",action)
         else:
             action = self.act_randomly()
