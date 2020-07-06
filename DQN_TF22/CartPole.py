@@ -37,7 +37,7 @@ def run_dqn():
         # reset env
         state = env.reset()
         total_reward = 0
-        for t in range(NUM_STEPS):
+        for _ in range(NUM_STEPS):
             # 1: get action(t)
             action = agent.act(state, episode)
             # 2: action(t) -> {state(t+1)} 
