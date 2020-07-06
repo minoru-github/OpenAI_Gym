@@ -34,9 +34,9 @@ class Agent():
         return model
     # Target networkの重みをMain Networkの重みを用いて更新
     def update_target_network(self):
-        self.run_counter += 1
         if self.run_counter % UPDATE_TARGET_FREQUENCY == 0:
             self.trgt_q_net.set_weights(self.main_q_net.get_weights())
+        self.run_counter += 1
     def replay(self):
         # MemoryからBATCH_SIZE分のサンプルを取り出す(サンプル数がBATCH_SIZE以下の場合はサンプル数分)
         batch = self.memory.sample(BATCH_SIZE)
