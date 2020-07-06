@@ -8,7 +8,7 @@ from Memory import Memory
 MAX_MEMORY = 100000
 BATCH_SIZE = 64
 GAMMA = 0.99        # discount factor
-UPDATE_TARGET_FREQUENCY = 1000 # Target Q networkの更新周期
+UPDATE_TARGET_FREQUENCY = 100 # Target Q networkの更新周期
 
 class Agent():
     # Constructor
@@ -29,7 +29,7 @@ class Agent():
         model = keras.Model(inputs=inputs,outputs=outputs,name=name)
         model.compile(
             loss=keras.losses.Huber(),
-            optimizer=keras.optimizers.RMSprop(learning_rate=0.00025)
+            optimizer=keras.optimizers.RMSprop(learning_rate=0.01)
         )
         return model
     # Target networkの重みをMain Networkの重みを用いて更新
