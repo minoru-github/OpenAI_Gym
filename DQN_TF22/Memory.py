@@ -17,5 +17,6 @@ class Memory():
     def sample(self, batch_size):
         n = min(batch_size, len(self.samples))
         return(random.sample(self.samples, n))
+    # Memoryが満タンかどうかの確認
     def is_full(self):
         return self.is_full_flag
