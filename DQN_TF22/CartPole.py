@@ -33,11 +33,14 @@ def run_dqn():
         else:
             state = next_state
     print("memory is full")
+    # init display
+    img_states = env.render(mode='rgb_array')
+    img = plt.imshow(img_states) # only call this once
     for episode in range(NUM_EPISODES):
         # reset env
         state = env.reset()
         total_reward = 0
-        for _ in range(NUM_STEPS):
+        for time in range(NUM_STEPS):
             # 1: get action(t)
             action = agent.act(state, episode)
             # 2: action(t) -> {state(t+1)} 
@@ -58,13 +61,15 @@ def run_dqn():
             # ex: judge go to next episode
             if done:
                 total_reward_history.append(total_reward)
-                plt.plot([ep for ep in range(episode+1)], total_reward_history)
-                plt.pause(0.001)
+                #plt.plot([ep for ep in range(episode+1)], total_reward_history)
+                #plt.pause(0.001)
                 # ex: logout
-                #print('Ep:',episode,', Tm:',time, 'Rwd:',total_reward)
+                print('Ep:',episode,', Tm:',time, 'Rwd:',total_reward)
                 #env.render()
                 break # go to next episode
             # ex: display
+            img_states = env.render(mode='rgb_array')
+            img.set_data(img_states) # just update the data
             
 
 if __name__ == "__main__":
