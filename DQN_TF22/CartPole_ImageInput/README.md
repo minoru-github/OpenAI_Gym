@@ -2,14 +2,13 @@
 CartPole  
 https://gym.openai.com/envs/CartPole-v1/  
 
-img_states = env.render(mode='rgb_array')
-
 ## 観測空間、行動空間
 | Observation<br>Space | Action<br>Space |
 | ---- | ---- |
 | numpy.ndarray<br>(400, 600, 3) |  Discrete(2)  |
 
     Observation:  
+        img_states = env.render(mode='rgb_array')
 ![image](https://user-images.githubusercontent.com/18751045/87165488-30406200-c305-11ea-9f92-2019df4bd0e1.png)  
 
     Actions:
