@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 env=gym.make("CartPole-v0")
 
 # parameter setting(user defined)
-NUM_STEPS    = 200   # 1試行のstep数
+NUM_STEPS    = env.spec.max_episode_steps   # 1試行のstep数
 NUM_EPISODES = 2000  # 総試行回数
 
 # parameter setting(depend on env)
