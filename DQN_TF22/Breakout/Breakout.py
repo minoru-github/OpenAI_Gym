@@ -2,6 +2,7 @@ import gym
 import tensorflow as tf
 from functools import reduce
 from Agent import Agent
+from ImageProcess import ImageProcess
 import matplotlib.pyplot as plt
 
 # choose env
@@ -10,9 +11,12 @@ env=gym.make("Breakout-v4")
 # parameter setting(user defined)
 NUM_STEPS    = env.spec.max_episode_steps   # 1試行のstep数
 NUM_EPISODES = 2000  # 総試行回数
+ACTION_LISTS = list(range(env.action_space.n))
+
+img_prcss = ImageProcess()
 
 # parameter setting(depend on env)
-state_shape = [env.observation_space.shape[0] , env.observation_space.shape[1]]
+state_shape = img_prcss.get_shape()
 num_actions = env.action_space.n # 取りうる行動の数
 
 def run_dqn():
@@ -21,12 +25,12 @@ def run_dqn():
     agent = Agent(shape=state_shape, num_actions=num_actions)
     # Init Memory\
     state = env.reset()
-    state = state[:,:,0]
+    state = img_prcss.preprocess(image = state)
     print("Start adding memory")
     while agent.memory.is_full() == False:
         action = agent.act_randomly()
         next_state, reward, done, _ = env.step(action)
-        next_state = next_state[:,:,0]
+        next_state = img_prcss.preprocess(image = next_state)
         if done:
             next_state = None
         experience = (state, action, reward, next_state)
@@ -42,14 +46,14 @@ def run_dqn():
     for episode in range(NUM_EPISODES):
         # reset env
         state = env.reset()
-        state = state[:,:,0]
+        state = img_prcss.preprocess(image = state)
         total_reward = 0
         for time in range(NUM_STEPS):
             # 1: get action(t)
             action = agent.act(state, episode)
             # 2: action(t) -> {state(t+1)} 
             next_state, reward, done, _ = env.step(action)
-            next_state = next_state[:,:,0]
+            next_state = img_prcss.preprocess(image = next_state)
             if done:
                 next_state = None
             # 3: get reward(t)
