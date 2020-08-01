@@ -12,8 +12,8 @@ UPDATE_TARGET_FREQUENCY = 100 # Target Q networkの更新周期
 
 class Agent():
     # Constructor
-    def __init__(self, shape = (210, 160), num_actions = 4):
-        self.shape  = shape
+    def __init__(self, shape = (84, 84), num_actions = 4):
+        self.shape  = (shape[0], shape[1], 1)
         self.num_actions = num_actions
         self.main_q_net = self._build_network("main")
         self.trgt_q_net = self._build_network('target')
@@ -23,8 +23,9 @@ class Agent():
     # [メモ]ここは2Dにしないといけない
     def _build_network(self, name):
         inputs = keras.Input(shape = self.shape)
-        x = layers.Dense(units=20, activation='relu')(inputs)
-        x = layers.Dense(units=20, activation='relu')(x)
+        x = layers.Conv2D(filters=4, kernel_size = 3, activation='relu')(inputs)
+        x = layers.Conv2D(filters=4, kernel_size = 3, activation='relu')(x)
+        x = layers.Flatten()(x)
         # memo:↓のactivationがlinearなのは、その行動をとった時のQ値を表現させるためにマイナスの値も取らせるため、だと思う。
         outputs = layers.Dense(units=self.num_actions, activation='linear')(x)
         model = keras.Model(inputs=inputs,outputs=outputs,name=name)
